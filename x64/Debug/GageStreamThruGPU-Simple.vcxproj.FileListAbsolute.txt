@@ -1,0 +1,2 @@
+C:\Program Files (x86)\Gage\CompuScope\CompuScope C SDK\C Samples\Advanced\GageStreamThruGPU-Simple\x64\Debug\GageStreamThruGPU-Simple.exe
+C:\Program Files (x86)\Gage\CompuScope\CompuScope C SDK\C Samples\Advanced\GageStreamThruGPU-Modified\x64\Debug\GageStreamThruGPU-Simple.exe

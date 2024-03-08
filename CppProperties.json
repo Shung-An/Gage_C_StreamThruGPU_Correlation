@@ -1,0 +1,29 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Debug",
+      "includePath": [
+        "${workspaceRoot}\\..\\..\\..\\..\\..\\..\\..\\publicGit\\pthreads4w-code-v3.0.0\\PTHREADS-BUILT\\include",
+        "${workspaceRoot}\\..\\..\\..\\..\\..\\..\\..\\publicGit\\mimalloc\\include",
+        "${env.INCLUDE}",
+        "${workspaceRoot}\\**"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ],
+  "environmentVariables": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "VaultUri": "https://xxx.vault.azure.net/",
+    "AZURE_USERNAME": "xxx@user.com",
+    "mi_option_set": "mi_option_reserve_huge_os_pages=2"
+  }
+}
