@@ -7,7 +7,9 @@
 #include <time.h>
 
 #define DIM 768
-#define SMEMDIM 24 
+
+#define SMEMDIM 100 
+#define N 1000704
 
 
 __global__ void plusOne(unsigned char *a, __int64 numElements, unsigned long skip)
@@ -44,332 +46,220 @@ __global__ void byteToDouble(unsigned char* in, double* window, double* out, __i
 
 
 
-__global__ void plusOneShort1(short* a, __int64 numElements, unsigned long skip)
-{
-
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i * 4] = (a[i * 4] - a[i * 4 + 2]);
-	}
-
-}
-
-
-__global__ void plusOneShort2(short* a, __int64 numElements, unsigned long skip)
+__global__ void demodulationAt12(short* a, __int64 numElements, int* out)
 {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 #pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
+	for (int i = index; i < numElements / 48; i += stride)
 	{
-		a[i*4 + 1] = (a[i*4 + 1] - a[i*4 + 3]);
-	}
-}
-__global__ void plusOneShort3(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index ;  i < numElements /16 ; i += stride)
-	{
-		a[i * 4] = (a[i * 4] - a[i * 4 + 2]);
-	}
-}
-
-
-__global__ void plusOneShort4(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i*4 + 1] = (a[i*4 + 1] - a[i*4 + 3]);
-	}
-}
-
-__global__ void plusOneShort5(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i*4] = (a[i*4] - a[i*4 + 2]);
-	}
-}
-
-
-__global__ void plusOneShort6(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i*4 + 1] = (a[i*4 + 1] - a[i *4+ 3]);
-	}
-}
-__global__ void plusOneShort7(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i*4] = (a[i*4] - a[i*4 + 2]);
-	}
-}
-
-
-__global__ void plusOneShort8(short* a, __int64 numElements, unsigned long skip)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements / 16; i += stride)
-	{
-		a[i*4 + 1] = (a[i*4 + 1] - a[i*4 + 3]);
-	}
-}
-
-__global__ void multiplyKernel(short* a, int* dev_a,  __int64 numElements)
-{
-	int index = blockDim.x * blockIdx.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements /4; i+=stride)
-	{
-		dev_a[i] = (int)a[i * 4 ] * (int)a[i * 4 + 1];
+		int a1 = a[i * 48];
+		int a2 = a[i * 48 + 1];
+		int a3 = a[i * 48 + 2];
+		int a4 = a[i * 48 + 3];
+		int a5 = a[i * 48 + 4];
+		int a6 = a[i * 48 + 5];
+		int a7 = a[i * 48 + 6];
+		int a8 = a[i * 48 + 7];
+		int a9 = a[i * 48 + 8];
+		int a10 = a[i * 48 + 9];
+		int a11 = a[i * 48 + 10];
+		int a12 = a[i * 48 + 11];
+		int a13 = a[i * 48 + 12];
+		int a14 = a[i * 48 + 13];
+		int a15 = a[i * 48 + 14];
+		int a16 = a[i * 48 + 15];
+		int a17 = a[i * 48 + 16];
+		int a18 = a[i * 48 + 17];
+		int a19 = a[i * 48 + 18];
+		int a20 = a[i * 48 + 19];
+		int a21 = a[i * 48 + 20];
+		int a22 = a[i * 48 + 21];
+		int a23 = a[i * 48 + 22];
+		int a24 = a[i * 48 + 23];
+		int a25 = a[i * 48 + 24];
+		int a26 = a[i * 48 + 25];
+		int a27 = a[i * 48 + 26];
+		int a28 = a[i * 48 + 27];
+		int a29 = a[i * 48 + 28];
+		int a30 = a[i * 48 + 29];
+		int a31 = a[i * 48 + 30];
+		int a32 = a[i * 48 + 31];
+		int a33 = a[i * 48 + 32];
+		int a34 = a[i * 48 + 33];
+		int a35 = a[i * 48 + 34];
+		int a36 = a[i * 48 + 35];
+		int a37 = a[i * 48 + 36];
+		int a38 = a[i * 48 + 37];
+		int a39 = a[i * 48 + 38];
+		int a40 = a[i * 48 + 39];
+		int a41 = a[i * 48 + 40];
+		int a42 = a[i * 48 + 41];
+		int a43 = a[i * 48 + 42];
+		int a44 = a[i * 48 + 43];
+		int a45 = a[i * 48 + 44];
+		int a46 = a[i * 48 + 45];
+		int a47 = a[i * 48 + 46];
+		int a48 = a[i * 48 + 47];
+		int temp = 0;
+		temp = (a25 - a1) * (a2 - a26) + (a27 - a3) * (a4 - a28) + (a29 - a5) * (a6 - a30) + (a7 - a31) * (a8 - a32) + (a9 - a33) * (a10 - a34) + (a11 - a35) * (a12 - a36) + (a13 - a37) * (a14 - a38) + (a15 - a39) * (a16 - a40) + (a17 - a41) * (a18 - a42) + (a43 - a19) * (a20 - a44) + (a45 - a21) * (a22 - a46) + (a47 - a23) * (a24 - a48);
+		out[i] = temp;
 	}
 
 }
 
-__global__ void sumKernel(int* dev_a, int* d_accTemp, __int64 numElements)
-{
-	/*int sum = int(0);
-	for (int i = blockIdx.x * blockDim.x + threadIdx.x;	i < numElements;i += blockDim.x * gridDim.x) {
-		sum += dev_a[i];
-	}
-	sum = warpReduceSum(sum);
-	if (threadIdx.x == 0)
-	{
-		atomicAdd(d_accTemp, sum);
-	}
-*/
 
 
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-#pragma unroll
-	for (int i = index; i < numElements ; i+=stride) 
-	{
-		atomicAdd(d_accTemp, (int)dev_a[i]);
-	}
+__inline__ __device__ int warpReduce(int mySum) {
+	mySum += __shfl_xor(mySum, 16);
+	mySum += __shfl_xor(mySum, 8);
+	mySum += __shfl_xor(mySum, 4);
+	mySum += __shfl_xor(mySum, 2);
+	mySum += __shfl_xor(mySum, 1);
+	return mySum;
 }
 
-__global__ void reduceSmemUnrollShfl(int* g_idata, int* g_odata,
+__global__ void reduceShfl(int* g_idata, int* g_odata,
 	unsigned int n)
 {
-	// static shared memory
-	__shared__ int smem[DIM];
+	// shared memory for each warp sum
+	__shared__ int smem[SMEMDIM];
 
-	// set thread ID
-	unsigned int tid = threadIdx.x;
+	// boundary check   
+	unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= n) return;
 
-	// global index
-	unsigned int idx = blockIdx.x * blockDim.x * 4 + threadIdx.x;
+	// read from global memory
+	int mySum = g_idata[idx];
 
-	// unrolling 4 blocks
-	int localSum = 0;
+	// calculate lane index and warp index
+	int laneIdx = threadIdx.x % warpSize;
+	int warpIdx = threadIdx.x / warpSize;
 
-	if (idx + 3 * blockDim.x < n)
-	{
-		int a1 = g_idata[idx];
-		int a2 = g_idata[idx + blockDim.x];
-		int a3 = g_idata[idx + 2 * blockDim.x];
-		int a4 = g_idata[idx + 3 * blockDim.x];
-		localSum = a1 + a2 + a3 + a4;
-	}
+	// block-wide warp reduce 
+	mySum = warpReduce(mySum);
 
-	smem[tid] = localSum;
+	// save warp sum to shared memory
+	if (laneIdx == 0) smem[warpIdx] = mySum;
+
+	// block synchronization
 	__syncthreads();
 
-	// in-place reduction in shared memory
-	if (blockDim.x >= 1024 && tid < 512) smem[tid] += smem[tid + 512];
-	__syncthreads();
-	if (blockDim.x >= 512 && tid < 256) smem[tid] += smem[tid + 256];
-	__syncthreads();
-	if (blockDim.x >= 256 && tid < 128) smem[tid] += smem[tid + 128];
-	__syncthreads();
-	if (blockDim.x >= 128 && tid < 64) smem[tid] += smem[tid + 64];
-	__syncthreads();
-	if (blockDim.x >= 64 && tid < 32) smem[tid] += smem[tid + 32];
-	__syncthreads();
-
-	// unrolling warp
-	localSum = smem[tid];
-	if (tid < 32)
-	{
-		localSum += __shfl_xor(localSum, 16);
-		localSum += __shfl_xor(localSum, 8);
-		localSum += __shfl_xor(localSum, 4);
-		localSum += __shfl_xor(localSum, 2);
-		localSum += __shfl_xor(localSum, 1);
-	}
+	// last warp reduce
+	mySum = (threadIdx.x < SMEMDIM) ? smem[laneIdx] : 0;
+	if (warpIdx == 0) mySum = warpReduce(mySum);
 
 	// write result for this block to global mem
-	if (tid == 0) g_odata[blockIdx.x] = localSum;
+	if (threadIdx.x == 0) atomicAdd(g_odata,mySum);
+}
+__global__ void initializeArray(int* array) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx < N) {
+		array[idx] = 1;
+	}
 }
 
+__global__ void resetInteger(int* value) {
+	*value = 0; // Reset integer value
+}
 
 // Helper function for using CUDA.
 
-extern "C" cudaError_t GPU_Equation_PlusOne(void* a, unsigned long skip, unsigned long sample_size, __int64 size, int blocks, int threads, int u32LoopCount)
+extern "C" cudaError_t GPU_Equation_PlusOne(void* a,
+	unsigned long skip, unsigned long sample_size,
+	__int64 size, int blocks, int threads, 
+	int u32LoopCount, int* h_odata, short* h_dev_a, short* h_dev_a2, int * dev_a, int* d_accTemp, int * d_accTemp2)
 {
 	cudaError_t cudaStatus = cudaSuccess;
-	
-	int deviceId;
-	int numberOfSMs;
-	cudaGetDevice(&deviceId);
-	cudaDeviceGetAttribute(&numberOfSMs, cudaDevAttrMultiProcessorCount, deviceId);
-	blocks = numberOfSMs * 32;
-	threads = 768;
-	time_t t = time(NULL);
-	struct tm* tm = localtime(&t);
-	char s[64];
-	size_t ret = strftime(s, sizeof(s), "%c", tm);
 
-	int CPUresult = 1 ;
+	blocks = 48 * 32;
+	threads = 768;
+	clock_t start_Time, current_time;
+	double elapsed_time;
+
+	int CPUresult = 0;
 	int CheckRaw = 0;
 	int AnalysisFile = 1;
+	int timer = 0;
+
+	int* check_dev =  (int*)malloc(size/48 * sizeof(int));
+	int h_accTemp2 = 0;
 
 	FILE* fptr;
 	if (AnalysisFile == 1) {
 		fptr = fopen("Analysis.txt", "a");
 	}
-
-	// Launch a kernel on the GPU with one thread for each element.
-
-	int* dev_a, * d_accTemp, * d_accTemp2,*temp_dev_a;
-	int h_accTemp = 0;
-	int h_accTemp2 = 0;
-
-	short* h_dev_a = (short*)malloc(size * sizeof(short));
-	short* h_dev_a2 = (short*)malloc(size * sizeof(short));
-
-
-	//cudaStatus = cudaDeviceSynchronize();
 	
-	cudaStatus = cudaMalloc((void**)&dev_a, size / 4 * sizeof(int));
-	//cudaStatus = cudaMalloc((void**)&temp_dev_a, size / 2 * sizeof(int));
-	cudaStatus = cudaMalloc((void**)&d_accTemp, 1 * sizeof(int));
-	
-	cudaStatus = cudaMalloc((void**)&d_accTemp2, blocks * sizeof(int));
-	int* h_odata = (int*)malloc(blocks * sizeof(int));
-	int gpu_sum = 0;
-
-	cudaStatus = cudaMemcpy(h_dev_a, a, size * sizeof(short), cudaMemcpyDeviceToHost);
+	if (timer==1) start_Time = clock();
 
 
-	cudaStream_t stream1, stream2, stream3, stream4, stream5, stream6, stream7, stream8;
-	cudaStreamCreate(&stream1);
-	cudaStreamCreate(&stream2);
-	cudaStreamCreate(&stream3);
-	cudaStreamCreate(&stream4);
-	cudaStreamCreate(&stream5);
-	cudaStreamCreate(&stream6);
-	cudaStreamCreate(&stream7);
-	cudaStreamCreate(&stream8);
+	if(CPUresult==1) cudaStatus = cudaMemcpy(h_dev_a, a, size * sizeof(short), cudaMemcpyDeviceToHost);
 
-	if (0 == blocks)
-	{
-		blocks = (int)(size + threads - 1) / threads;
-	}
-
-	if (1 == sample_size)
-	{
-		plusOne << <blocks, threads>> > ((unsigned char*)a, size, skip);
-	}
-	else
-	{
-		plusOneShort1 << <1536, 768, 0, stream1 >> > ((short*)a, size, skip);
-		plusOneShort2 << <blocks, threads, 0, stream2 >> > ((short*)a, size, skip);
-		plusOneShort3 << <blocks, threads, 0, stream3 >> > ((short*)a + size / 4, size, skip);
-		plusOneShort4 << <blocks, threads, 0, stream4 >> > ((short*)a + size / 4, size, skip);
-		plusOneShort5 << <blocks, threads, 0, stream5 >> > ((short*)a + size / 2, size, skip);
-		plusOneShort6 << <blocks, threads, 0, stream6 >> > ((short*)a + size / 2, size, skip);
-		plusOneShort7 << <blocks, threads, 0, stream7 >> > ((short*)a + 3 * size / 4, size, skip);
-		plusOneShort8 << <blocks, threads, 0, stream8 >> > ((short*)a + 3 * size / 4, size, skip);
-		cudaStatus = cudaDeviceSynchronize();
-	}
-
-	cudaStreamDestroy(stream1);
-	cudaStreamDestroy(stream2);
-	cudaStreamDestroy(stream3);
-	cudaStreamDestroy(stream4);
-	cudaStreamDestroy(stream5);
-	cudaStreamDestroy(stream6);
-	cudaStreamDestroy(stream7);
-	cudaStreamDestroy(stream8);
-
-
-	multiplyKernel << <blocks , threads>> > ((short*)a, (int*) dev_a, size);
-	//cudaStatus = cudaMemcpy(h_dev_a2, dev_a, size/4  * sizeof(int), cudaMemcpyDeviceToHost);
-
-	sumKernel << <blocks , threads >> > ((int*) dev_a, (int*) d_accTemp, size/4);
-
-	reduceSmemUnrollShfl << <blocks, threads >> > ((int*) dev_a, (int*) d_accTemp2, size/4);
-	cudaMemcpy(h_odata, d_accTemp2, blocks * sizeof(int), cudaMemcpyDeviceToHost);
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess)
-	{
-		fprintf(stderr, "deviceReduceKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		return cudaStatus;
-	}
-	
-	cudaStatus = cudaMemcpy(&h_accTemp, d_accTemp, sizeof(int), cudaMemcpyDeviceToHost);
-
-
-	cudaFree(dev_a);
-	cudaFree(d_accTemp);
-	cudaFree(d_accTemp2);
+	demodulationAt12 << <blocks, threads>> > ((short*)a, size, dev_a);
+	reduceShfl << <blocks, threads >> > (dev_a, d_accTemp2, size / 48);
+	cudaMemcpy(h_odata, d_accTemp2, 1 * sizeof(int), cudaMemcpyDeviceToHost);
+	resetInteger << <1, 1 >> > ((int*)d_accTemp2);
 
 	cudaStatus = cudaDeviceSynchronize();
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
-	cudaStatus = cudaMemcpy(h_dev_a2, a, size * sizeof(short), cudaMemcpyDeviceToHost);
+
 
 	if (CPUresult == 1) {
-		for (int i = 0; i < size; i++) {
-			if (i % 4 == 0 && i < size - 2)
-			{
-				//// Write to local disk
-				if (1 == CheckRaw) {
-					if (h_dev_a[i] - h_dev_a[i + 2] != h_dev_a2[i])
-					{
-						h_dev_a[i] = h_dev_a[i] - h_dev_a[i + 2];
-						h_dev_a[i + 1] = h_dev_a[i + 1] - h_dev_a[i + 3];
-						printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", i, h_dev_a2[i], h_dev_a[i], h_dev_a2[i + 1], h_dev_a[i + 1], h_dev_a2[i + 2], h_dev_a[i + 2], h_dev_a2[i + 3], h_dev_a[i + 3]);
-
-						//h_dev_a[i] = h_dev_a[i] * h_dev_a[i + 1];
-						////printf("%d\t%d\t%d\n", i, h_dev_a[i], h_dev_a2[i / 4]);
-						//h_dev_a[i + 1] = 0;
-					}
-				}
-				else {
-					h_dev_a[i] = h_dev_a[i] - h_dev_a[i + 2];
-					h_dev_a[i + 1] = h_dev_a[i + 1] - h_dev_a[i + 3];
-					h_dev_a[i + 2] = 0;
-					h_dev_a[i + 3] = 0;
-					h_dev_a[i] = h_dev_a[i] * h_dev_a[i + 1];
-					h_dev_a[i + 1] = 0;
-					h_accTemp2 += h_dev_a[i];
-				}
-			}
+		for (int i = 0; i < size/48; i++) {
+					int a1 = h_dev_a[i * 48];
+					int a2 = h_dev_a[i * 48 + 1];
+					int a3 = h_dev_a[i * 48 + 2];
+					int a4 = h_dev_a[i * 48 + 3];
+					int a5 = h_dev_a[i * 48 + 4];
+					int a6 = h_dev_a[i * 48 + 5];
+					int a7 = h_dev_a[i * 48 + 6];
+					int a8 = h_dev_a[i * 48 + 7];
+					int a9 = h_dev_a[i * 48 + 8];
+					int a10 = h_dev_a[i * 48 + 9];
+					int a11 = h_dev_a[i * 48 + 10];
+					int a12 = h_dev_a[i * 48 + 11];
+					int a13 = h_dev_a[i * 48 + 12];
+					int a14 = h_dev_a[i * 48 + 13];
+					int a15 = h_dev_a[i * 48 + 14];
+					int a16 = h_dev_a[i * 48 + 15];
+					int a17 = h_dev_a[i * 48 + 16];
+					int a18 = h_dev_a[i * 48 + 17];
+					int a19 = h_dev_a[i * 48 + 18];
+					int a20 = h_dev_a[i * 48 + 19];
+					int a21 = h_dev_a[i * 48 + 20];
+					int a22 = h_dev_a[i * 48 + 21];
+					int a23 = h_dev_a[i * 48 + 22];
+					int a24 = h_dev_a[i * 48 + 23];
+					int a25 = h_dev_a[i * 48 + 24];
+					int a26 = h_dev_a[i * 48 + 25];
+					int a27 = h_dev_a[i * 48 + 26];
+					int a28 = h_dev_a[i * 48 + 27];
+					int a29 = h_dev_a[i * 48 + 28];
+					int a30 = h_dev_a[i * 48 + 29];
+					int a31 = h_dev_a[i * 48 + 30];
+					int a32 = h_dev_a[i * 48 + 31];
+					int a33 = h_dev_a[i * 48 + 32];
+					int a34 = h_dev_a[i * 48 + 33];
+					int a35 = h_dev_a[i * 48 + 34];
+					int a36 = h_dev_a[i * 48 + 35];
+					int a37 = h_dev_a[i * 48 + 36];
+					int a38 = h_dev_a[i * 48 + 37];
+					int a39 = h_dev_a[i * 48 + 38];
+					int a40 = h_dev_a[i * 48 + 39];
+					int a41 = h_dev_a[i * 48 + 40];
+					int a42 = h_dev_a[i * 48 + 41];
+					int a43 = h_dev_a[i * 48 + 42];
+					int a44 = h_dev_a[i * 48 + 43];
+					int a45 = h_dev_a[i * 48 + 44];
+					int a46 = h_dev_a[i * 48 + 45];
+					int a47 = h_dev_a[i * 48 + 46];
+					int a48 = h_dev_a[i * 48 + 47];
+					int temp = 0;
+					temp = (a25 - a1) * (a2 - a26) + (a27 - a3) * (a4 - a28) + (a29 - a5) * (a6 - a30) + (a7 - a31) * (a8 - a32) + (a9 - a33) * (a10 - a34) + (a11 - a35) * (a12 - a36) + (a13 - a37) * (a14 - a38) + (a15 - a39) * (a16 - a40) + (a17 - a41) * (a18 - a42) + (a43 - a19) * (a20 - a44) + (a45 - a21) * (a22 - a46) + (a47 - a23) * (a24 - a48);
+					h_accTemp2 += temp;
+					//if(temp!=check_dev[i]) printf("\n%d\nCPU: %d\nGPU: %d\n", i, temp, check_dev[i]);
+			
 		}
 	}
 
@@ -377,32 +267,26 @@ extern "C" cudaError_t GPU_Equation_PlusOne(void* a, unsigned long skip, unsigne
 	if (CheckRaw != 1) {
 		if (CPUresult == 1) {
 			if (AnalysisFile == 1) {
-				fprintf(fptr, "%d\t%lld\t%lli\n", u32LoopCount, h_accTemp, h_accTemp2);
+				fprintf(fptr, "%d\t%d\t%d\n", u32LoopCount,h_accTemp2, h_odata[0]);
 				fclose(fptr);
 			}
 		}
 		else {
 			if (AnalysisFile == 1) {
-				fprintf(fptr, "%d\t%lld\t%lld\n", u32LoopCount, h_accTemp, h_accTemp2);
+				fprintf(fptr, "%d\t%d\n", u32LoopCount, h_odata[0]);
 				fclose(fptr);
 			}
 		}
 	}
 
-	for (int i = 0; i < blocks; i++)
-	{
-		gpu_sum += h_odata[i];
-	}
 
-	printf("%d\t: %d \n", u32LoopCount,gpu_sum);
 	fclose(fptr);
-	// Don't forget to free allocated memory on both host and device
-	if (CPUresult == 1) {
-		free(h_dev_a);
-		//free(h_dev_a2);
-}
-	free(h_odata);
-
+	// Get the current time
+	if (timer == 1) {
+		current_time = clock();
+		elapsed_time = ((double)(current_time - start_Time)) / CLOCKS_PER_SEC * 1000;
+		printf("Elapsed Time: %.2f ms\r", elapsed_time);
+	}
 
 
 	return cudaStatus;
