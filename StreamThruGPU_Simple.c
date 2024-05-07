@@ -42,7 +42,7 @@
 #include "CsExpert.h"
 #include <time.h>
 #include <io.h>
-#include <pthread.h>
+//#include <pthread.h>
 
 
 #define	MAX_CARDS_COUNT			10				// Max number of cards supported in a M/S Compuscope system 
@@ -390,6 +390,8 @@ int _tmain()
 	// Convert to number of samples
 	if ( -1 != g_llTotalSamplesConfig )
 		g_llTotalSamplesConfig /= g_CsAcqCfg.u32SampleSize;
+
+	printf("\n The Board Count: %u\n", CsSysInfo.u32BoardCount);
 
 	//  Create threads for Stream. In M/S system, we have to create one thread per card
 	for (n = 1, i = 0; n <= CsSysInfo.u32BoardCount; n++, i++ )
@@ -1081,7 +1083,7 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 	fprintf(fptr, "//////\nBuffer size (Samples)\n%d\nSampling Rate (Hz)\n%d\n///\n", u32TransferSizeSamples, g_CsAcqCfg.i64SampleRate);
 	fclose(fptr);
 	
-	int timer = 0;
+	int timer = 1;
 
 	// Steam acqusition has started.
 	// loop until either we've done the number of segments we want, or
@@ -1089,7 +1091,7 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 	// pCurrentBuffer and save pWorkBuffer to hard disk
 
 	clock_t start_Time, current_time;
-	double elapsed_time;
+	double elapsed_time, transfer_time;
 
 	while( ! ( bDone || bStreamCompletedSuccess) )
 	{
@@ -1099,54 +1101,35 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 		if ( WAIT_OBJECT_0 == WaitForSingleObject( g_hStreamError, 0 ) )
 			break;
 
-		// Determine where new data transfer data will go. We alternate
-		// between our 2 streaming buffers. d_buffer is the pointer to the
-		// buffer on the GPU
-
-		/*if (u32LoopCount & 1)
-		{
-			pCurrentBuffer = pBuffer2;
-			if (g_GpuConfig.bUseGpu)
-			{
-				d_buffer = d_buffer2;
-			}
-		}
-		else
-		{
-			pCurrentBuffer = pBuffer1;
-			if (g_GpuConfig.bUseGpu)
-			{
-				d_buffer = d_buffer1;
-			}
-		}*/
+	
 		if (g_GpuConfig.bDoAnalysis)
 		{
-			QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
+			QueryPerformanceCounter((LARGE_INTEGER*)&start_time);
 		}
-
-		
+		if (timer == 1) start_Time = clock();
 
 		i32Status = CsStmTransferToBuffer(g_hSystem, nCardIndex, pBuffer1, u32TransferSizeSamples);
 		i32Status = CsStmGetTransferStatus(g_hSystem, nCardIndex, g_StreamConfig.u32TransferTimeout, &u32ErrorFlag, &u32ActualLength, &u8EndOfData);
 
-		/*i32Status = CsStmTransferToBuffer(g_hSystem, nCardIndex, pBuffer2, u32TransferSizeSamples);
-		i32Status = CsStmGetTransferStatus(g_hSystem, nCardIndex, g_StreamConfig.u32TransferTimeout, &u32ErrorFlag, &u32ActualLength, &u8EndOfData);
-		i32Status = CsStmTransferToBuffer(g_hSystem, nCardIndex, pBuffer3, u32TransferSizeSamples);
-		i32Status = CsStmGetTransferStatus(g_hSystem, nCardIndex, g_StreamConfig.u32TransferTimeout, &u32ErrorFlag, &u32ActualLength, &u8EndOfData);
-		*/
+		if (timer == 1) {
+			current_time = clock();
+			transfer_time = ((double)(current_time - start_Time)) / CLOCKS_PER_SEC * 1000;
+			printf("Data Transfer time: %.2f ms\r\n", transfer_time);      // avarage time for data transfer time is 10 ms
+		}
+//TODO: Transfer - TOO SLOW 25 ms, concurency
+
+		
 		if (timer == 1) start_Time = clock();
 		cudaStatus = GPU_Equation_PlusOne(d_buffer1, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount, h_odata, h_dev_a, h_dev_a2, dev_a, d_accTemp, d_accTemp2);
+//TODO: TOO SLOW 15 ms, concurency, test as 10 ms		
+
 		if (timer == 1) {
 			current_time = clock();
 			elapsed_time = ((double)(current_time - start_Time)) / CLOCKS_PER_SEC * 1000;
-			printf("Elapsed Time: %.2f ms\r", elapsed_time);
+			printf("GPU computation time: %.2f ms\r\n", elapsed_time);		
 		}
-		//u32LoopCount++;
-		//cudaStatus = GPU_Equation_PlusOne(d_buffer2, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount, h_odata, h_dev_a, h_dev_a2, dev_a, d_accTemp, d_accTemp2);
-		//
-		//u32LoopCount++;
-		//cudaStatus = GPU_Equation_PlusOne(d_buffer3, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount, h_odata, h_dev_a, h_dev_a2, dev_a, d_accTemp, d_accTemp2);
-
+	
+	
 
 		if (CS_FAILED(i32Status))
 		{

@@ -108,6 +108,52 @@ __global__ void demodulationAt12(short* a, __int64 numElements, int* out)
 
 }
 
+__global__ void demodulationAt8(short* a, __int64 numElements, int* out)
+{
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+#pragma unroll
+	for (int i = index; i < numElements / 32; i += stride)
+	{
+		int a1 = a[i * 32];
+		int a2 = a[i * 32 + 1];
+		int a3 = a[i * 32 + 2];
+		int a4 = a[i * 32 + 3];
+		int a5 = a[i * 32 + 4];
+		int a6 = a[i * 32 + 5];
+		int a7 = a[i * 32 + 6];
+		int a8 = a[i * 32 + 7];
+		int a9 = a[i * 32 + 8];
+		int a10 = a[i * 32 + 9];
+		int a11 = a[i * 32 + 10];
+		int a12 = a[i * 32 + 11];
+		int a13 = a[i * 32 + 12];
+		int a14 = a[i * 32 + 13];
+		int a15 = a[i * 32 + 14];
+		int a16 = a[i * 32 + 15];
+		int a17 = a[i * 32 + 16];
+		int a18 = a[i * 32 + 17];
+		int a19 = a[i * 32 + 18];
+		int a20 = a[i * 32 + 19];
+		int a21 = a[i * 32 + 20];
+		int a22 = a[i * 32 + 21];
+		int a23 = a[i * 32 + 22];
+		int a24 = a[i * 32 + 23];
+		int a25 = a[i * 32 + 24];
+		int a26 = a[i * 32 + 25];
+		int a27 = a[i * 32 + 26];
+		int a28 = a[i * 32 + 27];
+		int a29 = a[i * 32 + 28];
+		int a30 = a[i * 32 + 29];
+		int a31 = a[i * 32 + 30];
+		int a32 = a[i * 32 + 31];
+		int temp = 0;
+		temp = (a17 - a1) * (a2 - a18) + (a19 - a3) * (a4 - a20) + (a5 - a21) * (a6 - a22) + (a7 - a23) * (a8 - a24) + (a9 - a25) * (a10 - a26) + (a11 - a27) * (a12 - a28) + (a29 - a13) * (a14 - a30) + (a31 - a15) * (a16 - a32);
+		out[i] = temp;
+	}
+
+}
+
 
 
 __inline__ __device__ int warpReduce(int mySum) {
@@ -177,12 +223,12 @@ extern "C" cudaError_t GPU_Equation_PlusOne(void* a,
 	clock_t start_Time, current_time;
 	double elapsed_time;
 
-	int CPUresult = 0;
+	int CPUresult = 0;// debug mode
 	int CheckRaw = 0;
 	int AnalysisFile = 1;
 	int timer = 0;
 
-	int* check_dev =  (int*)malloc(size/48 * sizeof(int));
+	//int* check_dev =  (int*)malloc(size/48 * sizeof(int));
 	int h_accTemp2 = 0;
 
 	FILE* fptr;
@@ -194,20 +240,24 @@ extern "C" cudaError_t GPU_Equation_PlusOne(void* a,
 
 
 	if(CPUresult==1) cudaStatus = cudaMemcpy(h_dev_a, a, size * sizeof(short), cudaMemcpyDeviceToHost);
+	////////////////////////////////////////////////////
 
-	demodulationAt12 << <blocks, threads>> > ((short*)a, size, dev_a);
-	reduceShfl << <blocks, threads >> > (dev_a, d_accTemp2, size / 48);
+	//demodulationAt12 << <blocks, threads >> > ((short*)a, size, dev_a);
+	demodulationAt8 << <blocks, threads >> > ((short*)a, size, dev_a);
+	reduceShfl << <blocks, threads >> > (dev_a, d_accTemp2, size / 32);
 	cudaMemcpy(h_odata, d_accTemp2, 1 * sizeof(int), cudaMemcpyDeviceToHost);
 	resetInteger << <1, 1 >> > ((int*)d_accTemp2);
 
 	cudaStatus = cudaDeviceSynchronize();
+
+	////////////////////////////////////////////////////
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
 	// any errors encountered during the launch.
 
 
 	if (CPUresult == 1) {
-		for (int i = 0; i < size/48; i++) {
-					int a1 = h_dev_a[i * 48];
+		for (int i = 0; i < size/32; i++) {
+					/*int a1 = h_dev_a[i * 48];
 					int a2 = h_dev_a[i * 48 + 1];
 					int a3 = h_dev_a[i * 48 + 2];
 					int a4 = h_dev_a[i * 48 + 3];
@@ -257,6 +307,44 @@ extern "C" cudaError_t GPU_Equation_PlusOne(void* a,
 					int a48 = h_dev_a[i * 48 + 47];
 					int temp = 0;
 					temp = (a25 - a1) * (a2 - a26) + (a27 - a3) * (a4 - a28) + (a29 - a5) * (a6 - a30) + (a7 - a31) * (a8 - a32) + (a9 - a33) * (a10 - a34) + (a11 - a35) * (a12 - a36) + (a13 - a37) * (a14 - a38) + (a15 - a39) * (a16 - a40) + (a17 - a41) * (a18 - a42) + (a43 - a19) * (a20 - a44) + (a45 - a21) * (a22 - a46) + (a47 - a23) * (a24 - a48);
+					*/
+					int a1 = h_dev_a[i * 32];
+					int a2 = h_dev_a[i * 32 + 1];
+					int a3 = h_dev_a[i * 32 + 2];
+					int a4 = h_dev_a[i * 32 + 3];
+					int a5 = h_dev_a[i * 32 + 4];
+					int a6 = h_dev_a[i * 32 + 5];
+					int a7 = h_dev_a[i * 32 + 6];
+					int a8 = h_dev_a[i * 32 + 7];
+					int a9 = h_dev_a[i * 32 + 8];
+					int a10 = h_dev_a[i * 32 + 9];
+					int a11 = h_dev_a[i * 32 + 10];
+					int a12 = h_dev_a[i * 32 + 11];
+					int a13 = h_dev_a[i * 32 + 12];
+					int a14 = h_dev_a[i * 32 + 13];
+					int a15 = h_dev_a[i * 32 + 14];
+					int a16 = h_dev_a[i * 32 + 15];
+					int a17 = h_dev_a[i * 32 + 16];
+					int a18 = h_dev_a[i * 32 + 17];
+					int a19 = h_dev_a[i * 32 + 18];
+					int a20 = h_dev_a[i * 32 + 19];
+					int a21 = h_dev_a[i * 32 + 20];
+					int a22 = h_dev_a[i * 32 + 21];
+					int a23 = h_dev_a[i * 32 + 22];
+					int a24 = h_dev_a[i * 32 + 23];
+					int a25 = h_dev_a[i * 32 + 24];
+					int a26 = h_dev_a[i * 32 + 25];
+					int a27 = h_dev_a[i * 32 + 26];
+					int a28 = h_dev_a[i * 32 + 27];
+					int a29 = h_dev_a[i * 32 + 28];
+					int a30 = h_dev_a[i * 32 + 29];
+					int a31 = h_dev_a[i * 32 + 30];
+					int a32 = h_dev_a[i * 32 + 31];
+					int temp = 0;
+					temp = (a17 - a1) * (a2 - a18) + (a19 - a3) * (a4 - a20) + (a5 - a21) * (a6 - a22) + (a7 - a23) * (a8 - a24) + (a9 - a25) * (a10 - a26) + (a11 - a27) * (a12 - a28) + (a29 - a13) * (a14 - a30) + (a31 - a15) * (a16 - a32);
+
+					
+					
 					h_accTemp2 += temp;
 					//if(temp!=check_dev[i]) printf("\n%d\nCPU: %d\nGPU: %d\n", i, temp, check_dev[i]);
 			
