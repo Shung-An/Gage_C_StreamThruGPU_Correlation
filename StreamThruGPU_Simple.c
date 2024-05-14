@@ -168,6 +168,11 @@ int _tmain()
 	cudaError_t					cudaStatus = cudaSuccess;
 	int64						i64TickFrequency = 0;
 
+	clock_t pre_start_time, pre_current_time;
+	double pre_time;
+
+	pre_start_time = clock();
+	
 	// Initializes the CompuScope boards found in the system. If the
 	// system is not found a message with the error code will appear.
 	// Otherwise i32Status will contain the number of systems found.
@@ -434,7 +439,11 @@ int _tmain()
 
 	// Set the event g_hStreamStarted so that the other threads can start to transfer data
 	Sleep(g_StreamConfig.u32DelayStartTransfer);		// Only for debug
-	SetEvent( g_hStreamStarted );					// TODO: what will this line do? 
+	SetEvent( g_hStreamStarted );		
+	
+	pre_current_time = clock();
+	pre_time = ((double)(pre_current_time - pre_start_time)) / CLOCKS_PER_SEC * 1000;
+	printf("Prepare Time: %.2f ms\n", pre_time);
 
 
 	// Loop until either we've done the number of segments we want, or
@@ -739,7 +748,8 @@ int32 LoadStmConfiguration(LPCTSTR szIniFile, PCSSTMCONFIG pConfig)
 
 	nDummy = 0;
 	CsStmCfg.bErrorHandling = (0 != GetPrivateProfileInt(STM_SECTION, _T("ErrorHandlingMode"), nDummy, szFilePath));
-	
+	//CsStmCfg.bErrorHandling = 1;
+	//da
 	nDummy = 0;
 	CsStmCfg.bCascadeResult = (0 != GetPrivateProfileInt(STM_SECTION, _T("CascadeResult"), nDummy, szFilePath));
 
@@ -859,23 +869,23 @@ cudaError_t InitializeCudaDevice(int32 nDevice, int32* i32MaxBlocks, int32* i32M
 /***************************************************************************************************
 ****************************************************************************************************/
 
-DWORD WINAPI CardStreamThread( void *CardIndex )
+DWORD WINAPI CardStreamThread(void* CardIndex)
 {
-	uInt16				nCardIndex = *((uInt16 *) CardIndex);
-	void*				pBuffer1 = NULL;
-	void*				pBuffer2 = NULL;
-	void*				pBuffer3 = NULL;
+	uInt16				nCardIndex = *((uInt16*)CardIndex);
+	void* pBuffer1 = NULL;
+	void* pBuffer2 = NULL;
 
-	void*				h_buffer1 = NULL;
-	void*				h_buffer2 = NULL;
-	void*				h_buffer3 = NULL;
-	void*				d_buffer1 = NULL;
-	void*				d_buffer2 = NULL;
-	void*				d_buffer3 = NULL;
-	void*				d_buffer = NULL;
 
-	void*				pCurrentBuffer = NULL;
-	void*				pWorkBuffer = NULL;
+	void* h_buffer1 = NULL;
+	void* h_buffer2 = NULL;
+
+	void* d_buffer1 = NULL;
+	void* d_buffer2 = NULL;
+
+	void* d_buffer = NULL;
+
+	void* pCurrentBuffer = NULL;
+	void* pWorkBuffer = NULL;
 	int* dev_a, * d_accTemp, * d_accTemp2;
 
 	uInt32				u32TransferSizeSamples = 0;
@@ -908,31 +918,31 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 	QueryPerformanceFrequency((LARGE_INTEGER*)&temp);
 	double freq = ((double)temp.QuadPart) / 1000.0;
 
-	sprintf_s( szSaveFileName, sizeof (szSaveFileName), "%s_%d.dat", g_StreamConfig.strResultFile, nCardIndex );
+	sprintf_s(szSaveFileName, sizeof(szSaveFileName), "%s_%d.dat", g_StreamConfig.strResultFile, nCardIndex);
 
-	if ( g_StreamConfig.bSaveToFile )
+	if (g_StreamConfig.bSaveToFile)
 	{
 		//If there is an header, the file exist and we must keep the file and don't overwrite it
-		hFile = CreateFile( szSaveFileName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, dwFileFlag, NULL );
-		if ( INVALID_HANDLE_VALUE == hFile )
+		hFile = CreateFile(szSaveFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, dwFileFlag, NULL);
+		if (INVALID_HANDLE_VALUE == hFile)
 		{
-			_ftprintf (stderr, _T("\nUnable to create data file.\n"));
+			_ftprintf(stderr, _T("\nUnable to create data file.\n"));
 			ExitThread(1);
 		}
 	}
 
-/*
-	We need to allocate a buffer for transferring the data. Buffer is allocated as void with
-	a size of length * number of channels * sample size. All channels in the mode are transferred
-	within the same buffer, so the mode tells us the number of channels.  Currently, TAIL_ADJUST 
-	samples are placed at the end of each segment. These samples contain timestamp information for the 
-	segemnt.  The buffer must be allocated by a call to CsStmAllocateBuffer.  This routine will
-	allocate a buffer suitable for streaming.  In this program we're allocating 2 streaming buffers
-	so we can transfer to one while doing analysis on the other.
-*/
+	/*
+		We need to allocate a buffer for transferring the data. Buffer is allocated as void with
+		a size of length * number of channels * sample size. All channels in the mode are transferred
+		within the same buffer, so the mode tells us the number of channels.  Currently, TAIL_ADJUST
+		samples are placed at the end of each segment. These samples contain timestamp information for the
+		segemnt.  The buffer must be allocated by a call to CsStmAllocateBuffer.  This routine will
+		allocate a buffer suitable for streaming.  In this program we're allocating 2 streaming buffers
+		so we can transfer to one while doing analysis on the other.
+	*/
 
 	u32SectorSize = GetSectorSize();
-	if ( g_StreamConfig.bFileFlagNoBuffering )
+	if (g_StreamConfig.bFileFlagNoBuffering)
 	{
 		// If bFileFlagNoBuffering is set, the buffer size should be multiple of the sector size of the Hard Disk Drive.
 		// Most of HDDs have the sector size equal 512 or 1024.
@@ -941,40 +951,30 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 	}
 
 	// Round up the DMA buffer size to DMA boundary (required by the Streaming data transfer)
-	if ( g_StreamConfig.u32BufferSizeBytes % u32DmaBoundary )
+	if (g_StreamConfig.u32BufferSizeBytes % u32DmaBoundary)
 		g_StreamConfig.u32BufferSizeBytes += (u32DmaBoundary - g_StreamConfig.u32BufferSizeBytes % u32DmaBoundary);
 
-	_ftprintf (stderr, _T("\n(Actual buffer size used for data streaming = %u Bytes)\n"), g_StreamConfig.u32BufferSizeBytes );
+	_ftprintf(stderr, _T("\n(Actual buffer size used for data streaming = %u Bytes)\n"), g_StreamConfig.u32BufferSizeBytes);
 
 	i32Status = CsStmAllocateBuffer(g_hSystem, nCardIndex, g_StreamConfig.u32BufferSizeBytes, &pBuffer1);			// TODO: Urgent, allocate enough memory of Buffer1
 	if (CS_FAILED(i32Status))
 	{
-		_ftprintf (stderr, _T("\nUnable to allocate memory for stream buffer 1.\n"));
+		_ftprintf(stderr, _T("\nUnable to allocate memory for stream buffer 1.\n"));
 		CloseHandle(hFile);
 		DeleteFile(szSaveFileName);
 		ExitThread(1);
 	}
 
-	//i32Status = CsStmAllocateBuffer(g_hSystem, nCardIndex, g_StreamConfig.u32BufferSizeBytes, &pBuffer2);
-	//if (CS_FAILED(i32Status))
-	//{
-	//	_ftprintf(stderr, _T("\nUnable to allocate memory for stream buffer 2.\n"));
-	//	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
-	//	CloseHandle(hFile);
-	//	DeleteFile(szSaveFileName);
-	//	ExitThread(1);
-	//}
+	i32Status = CsStmAllocateBuffer(g_hSystem, nCardIndex, g_StreamConfig.u32BufferSizeBytes, &pBuffer2);
+	if (CS_FAILED(i32Status))
+	{
+		_ftprintf(stderr, _T("\nUnable to allocate memory for stream buffer 2.\n"));
+		CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
+		CloseHandle(hFile);
+		DeleteFile(szSaveFileName);
+		ExitThread(1);
+	}
 
-	//i32Status = CsStmAllocateBuffer(g_hSystem, nCardIndex, g_StreamConfig.u32BufferSizeBytes, &pBuffer3);
-	//if (CS_FAILED(i32Status))
-	//{
-	//	_ftprintf(stderr, _T("\nUnable to allocate memory for stream buffer 3.\n"));
-	//	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
-	//	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
-	//	CloseHandle(hFile);
-	//	DeleteFile(szSaveFileName);
-	//	ExitThread(1);
-	//}
 
 	if (g_GpuConfig.bUseGpu)
 	{
@@ -982,12 +982,12 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 		cudaStatus = cudaHostRegister(h_buffer1, (size_t)g_StreamConfig.u32BufferSizeBytes, cudaHostRegisterMapped);
 		if (cudaStatus != cudaSuccess)
 		{
-			fprintf(stderr, "cudaHostRegister failed! Error code %d\n", cudaStatus); 
+			fprintf(stderr, "cudaHostRegister failed! Error code %d\n", cudaStatus);
 			CsFreeSystem(g_hSystem);
 			CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
 			return cudaStatus;
 		}
-	/*	h_buffer2 = (unsigned char*)ALIGN_UP(pBuffer2, MEMORY_ALIGNMENT);
+		h_buffer2 = (unsigned char*)ALIGN_UP(pBuffer2, MEMORY_ALIGNMENT);
 		cudaStatus = cudaHostRegister(h_buffer2, (size_t)g_StreamConfig.u32BufferSizeBytes, cudaHostRegisterMapped);
 		if (cudaStatus != cudaSuccess)
 		{
@@ -997,17 +997,7 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 			cudaHostUnregister(h_buffer1);
 			return cudaStatus;
 		}
-		h_buffer3 = (unsigned char*)ALIGN_UP(pBuffer3, MEMORY_ALIGNMENT);
-		cudaStatus = cudaHostRegister(h_buffer3, (size_t)g_StreamConfig.u32BufferSizeBytes, cudaHostRegisterMapped);
-		if (cudaStatus != cudaSuccess)
-		{
-			fprintf(stderr, "cudaHostRegister failed! Error code %d\n", cudaStatus);
-			CsFreeSystem(g_hSystem);
-			CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer3);
-			cudaHostUnregister(h_buffer1);
-			return cudaStatus;
-		}*/
-		cudaStatus = cudaHostGetDevicePointer((void**)&d_buffer1, (void *)h_buffer1, 0);
+		cudaStatus = cudaHostGetDevicePointer((void**)&d_buffer1, (void*)h_buffer1, 0);
 		if (cudaStatus != cudaSuccess)
 		{
 			fprintf(stderr, "cudaHostGetDevicePointer failed!  Error code %d\n", cudaStatus);
@@ -1017,304 +1007,322 @@ DWORD WINAPI CardStreamThread( void *CardIndex )
 			cudaHostUnregister(h_buffer2);
 			return cudaStatus;
 		}
-		//cudaStatus = cudaHostGetDevicePointer((void**)&d_buffer2, (void*)h_buffer2, 0);
-		//if (cudaStatus != cudaSuccess)
-		//{
-		//	fprintf(stderr, "cudaHostGetDevicePointer failed!  Error code %d\n", cudaStatus);
-		//	CsFreeSystem(g_hSystem);
-		//	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
-		//	cudaHostUnregister(h_buffer1);
-		//	cudaHostUnregister(h_buffer2);
-		//	return cudaStatus;
-		//}
-		//cudaStatus = cudaHostGetDevicePointer((void**)&d_buffer3, (void*)h_buffer3, 0);
-		//if (cudaStatus != cudaSuccess)
-		//{
-		//	fprintf(stderr, "cudaHostGetDevicePointer failed!  Error code %d\n", cudaStatus);
-		//	CsFreeSystem(g_hSystem);
-		//	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer3);
-		//	cudaHostUnregister(h_buffer1);
-		//	cudaHostUnregister(h_buffer2);
-		//	cudaHostUnregister(h_buffer3);
-		//	return cudaStatus;
-		//}
-	}
+		cudaStatus = cudaHostGetDevicePointer((void**)&d_buffer2, (void*)h_buffer2, 0);
+		if (cudaStatus != cudaSuccess)
+		{
+			fprintf(stderr, "cudaHostGetDevicePointer failed!  Error code %d\n", cudaStatus);
+			CsFreeSystem(g_hSystem);
+			CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
+			cudaHostUnregister(h_buffer1);
+			cudaHostUnregister(h_buffer2);
+			return cudaStatus;
+		}
 
 
 
-	// So far so good ...
-	// Let the main thread know that this thread is ready for stream
-	SetEvent( g_hThreadReadyForStream );
 
-	// Wait for the start acquisition event from the main thread
-	WaitEvents[0] = g_hStreamStarted;
-	WaitEvents[1] = g_hStreamAbort;
-	dwWaitStatus = WaitForMultipleObjects( 2, WaitEvents, FALSE, INFINITE );
+		// So far so good ...
+		// Let the main thread know that this thread is ready for stream
+		SetEvent(g_hThreadReadyForStream);
 
-	if ( (WAIT_OBJECT_0 + 1) == dwWaitStatus )
-	{
-		// Aborted from user or error
-		CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
-		CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
-		CloseHandle(hFile);
+		// Wait for the start acquisition event from the main thread
+		WaitEvents[0] = g_hStreamStarted;
+		WaitEvents[1] = g_hStreamAbort;
+		dwWaitStatus = WaitForMultipleObjects(2, WaitEvents, FALSE, INFINITE);
+
+		if ((WAIT_OBJECT_0 + 1) == dwWaitStatus)
+		{
+			// Aborted from user or error
+			CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
+			CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
+			CloseHandle(hFile);
+			if (g_GpuConfig.bUseGpu)
+			{
+				cudaHostUnregister(h_buffer1);
+				cudaHostUnregister(h_buffer2);
+			}
+			DeleteFile(szSaveFileName);
+			ExitThread(1);
+		}
+
+		// Convert the transfer size to BYTEs or WORDs depending on the card.
+		u32TransferSizeSamples = g_StreamConfig.u32BufferSizeBytes / g_CsSysInfo.u32SampleSize;
+
+		int* h_odata = (int*)malloc(1 * sizeof(int));
+		short* h_dev_a = (short*)malloc(u32TransferSizeSamples * sizeof(short));
+		short* h_dev_a2 = (short*)malloc(u32TransferSizeSamples * sizeof(short));
+		cudaStatus = cudaMalloc((int**)&dev_a, u32TransferSizeSamples / 48 * sizeof(int));
+		cudaStatus = cudaMalloc((void**)&d_accTemp, 1 * sizeof(int));
+		cudaStatus = cudaMalloc((void**)&d_accTemp2, 1 * sizeof(int));
+		FILE* fptr;
+		if (g_StreamConfig.bCascadeResult == 0) fptr = fopen("Analysis.txt", "w");
+		if (g_StreamConfig.bCascadeResult == 1) fptr = fopen("Analysis.txt", "a");
+		fprintf(fptr, "//////\nBuffer size (Samples)\n%d\nSampling Rate (Hz)\n%d\n///\n", u32TransferSizeSamples, g_CsAcqCfg.i64SampleRate);
+		fclose(fptr);
+
+		int timer = 1;
+
+		// Steam acqusition has started.
+		// loop until either we've done the number of segments we want, or
+		// the ESC key was pressed to abort. While we loop, we transfer data into
+		// pCurrentBuffer and save pWorkBuffer to hard disk
+
+		clock_t start_Time, current_time, transfer_start_time, transfer_current_time, step_start_time, step_end_time;
+		double elapsed_time, transfer_time, step_time;
+
+		while (!(bDone || bStreamCompletedSuccess))
+		{
+			step_start_time = clock();
+			// Check if user has aborted or an error has occured
+			if (WAIT_OBJECT_0 == WaitForSingleObject(g_hStreamAbort, 0))
+				break;
+			if (WAIT_OBJECT_0 == WaitForSingleObject(g_hStreamError, 0))
+				break;
+
+			// Determine where new data transfer data will go. We alternate
+			// between our 2 streaming buffers. d_buffer is the pointer to the
+			// buffer on the GPU
+
+			if (u32LoopCount & 1)
+			{
+				pCurrentBuffer = pBuffer2;
+				if (g_GpuConfig.bUseGpu)
+				{
+					d_buffer = d_buffer2;
+				}
+			}
+			else
+			{
+				pCurrentBuffer = pBuffer1;
+				if (g_GpuConfig.bUseGpu)
+				{
+					d_buffer = d_buffer1;
+				}
+			}
+
+			if (g_GpuConfig.bDoAnalysis)
+			{
+				QueryPerformanceCounter((LARGE_INTEGER*)&start_time);
+			}
+
+
+			if (timer == 1) transfer_start_time = clock();
+			i32Status = CsStmTransferToBuffer(g_hSystem, nCardIndex, pCurrentBuffer, u32TransferSizeSamples);
+
+			if (CS_FAILED(i32Status))
+			{
+				if (CS_STM_COMPLETED == i32Status)
+					bStreamCompletedSuccess = TRUE;
+				else
+				{
+					SetEvent(g_hStreamError);
+					DisplayErrorString(i32Status);
+				}
+				break;
+			}
+
+			// do processing here on pWorkBuffer
+			if (g_GpuConfig.bDoAnalysis)
+			{
+				if (g_GpuConfig.bUseGpu)
+				{
+
+					if (timer == 1) start_Time = clock();
+					cudaStatus = GPU_Equation_PlusOne(d_buffer, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount, h_odata, h_dev_a, h_dev_a2, dev_a, d_accTemp, d_accTemp2);
+
+
+					if (timer == 1) {
+						current_time = clock();
+						elapsed_time = ((double)(current_time - start_Time)) / CLOCKS_PER_SEC * 1000;
+						printf("Process Time: %.2f ms\n", elapsed_time);
+					}
+
+					if (cudaStatus != cudaSuccess)
+					{
+						SetEvent(g_hStreamError);
+						fprintf(stderr, "GPU_Equation_PlusOne() failed. Error code %d\n", cudaStatus);
+						break;
+					}
+				}
+				else // use CPU
+				{
+					i32Status = CPU_Equation_PlusOne(pCurrentBuffer, g_CsAcqCfg.u32SampleSize, 0, u32TransferSizeSamples);
+
+					if (CS_FAILED(i32Status))
+					{
+						SetEvent(g_hStreamError);
+						fprintf(stderr, "CPU_Equation_PlusOne() failed.\n");
+						break;
+					}
+				}
+			}
+
+
+			if (g_StreamConfig.bSaveToFile && NULL != pWorkBuffer)
+			{
+				// While data transfer of the current buffer is in progress, save the data from pWorkBuffer to hard disk
+				dwBytesSave = 0;
+				bWriteSuccess = WriteFile(hFile, pWorkBuffer, g_StreamConfig.u32BufferSizeBytes, &dwBytesSave, NULL);
+				if (!bWriteSuccess || dwBytesSave != g_StreamConfig.u32BufferSizeBytes)
+				{
+					_ftprintf(stdout, _T("\nWriteFile() error on card %d !!! (GetLastError() = 0x%x\n"), nCardIndex, GetLastError());
+					SetEvent(g_hStreamError);
+					bDone = TRUE;
+				}
+			}
+
+			// Wait for the DMA transfer on the current buffer to complete so we can loop back around to start a new one.
+			// The calling thread will sleep until the transfer completes
+			i32Status = CsStmGetTransferStatus(g_hSystem, nCardIndex, g_StreamConfig.u32TransferTimeout, &u32ErrorFlag, &u32ActualLength, &u8EndOfData);
+
+			if (timer == 1) {
+				transfer_current_time = clock();
+				transfer_time = ((double)(transfer_current_time - transfer_start_time)) / CLOCKS_PER_SEC * 1000;
+				printf("Transfer and Process Time: %.2f ms\n", transfer_time);
+			}
+
+
+			if (CS_SUCCEEDED(i32Status))
+			{
+				// Calculate the total of data transfered so far for this card
+				g_llCardTotalData[nCardIndex - 1] += u32ActualLength;//////////////////////////////////////////////////////////////////////////////////////////////////////////
+				bStreamCompletedSuccess = (0 != u8EndOfData);
+
+				if (0 != u32ErrorFlag)
+				{
+					if (STM_TRANSFER_ERROR_FIFOFULL & u32ErrorFlag)
+					{
+						// The Fifo full error has occured at the card level which results data lost.
+						// This error occurs when the application is not fast enough to transfer data.
+						if (0 != g_StreamConfig.bErrorHandling)
+						{
+							// g_StreamConfig.bErrorHandling != 0
+							// Stop as soon as we recieve the FIFO full error from the card
+							SetEvent(g_hStreamError);
+							_ftprintf(stdout, _T("\nFifo full detected on the card %d !!!\n"), nCardIndex);
+							bDone = TRUE;
+						}
+						else
+						{
+							// g_StreamConfig.bErrorHandling == 0
+							// Transfer all valid data into the PC RAM
+
+							// Althought the Fifo full has occured, there is valid data available on the On-board memory.
+							// To transfer these data into the PC RAM, we can keep calling CsStmTransferToBuffer() then CsStmGetTransferStatus()
+							// until the function CsStmTransferToBuffer() returns the error CS_STM_FIFO_OVERFLOW.
+							// The error CS_STM_FIFO_OVERFLOW indicates that all valid data has been transfered to the PC RAM
+
+							// Do nothing here, go backto the loop CsStmTransferToBuffer() CsStmGetTransferStatus()
+						}
+					}
+					if (u32ErrorFlag & STM_TRANSFER_ERROR_CHANNEL_PROTECTION)
+					{
+						// Channel protection error as coccrued
+						SetEvent(g_hStreamError);
+						_ftprintf(stdout, _T("\nChannel Protection Error on Board %d!!!\n"), nCardIndex);
+						bDone = TRUE;
+					}
+				}
+			}
+			else
+			{
+				SetEvent(g_hStreamError);
+				bDone = TRUE;
+
+				if (CS_STM_TRANSFER_TIMEOUT == i32Status)
+				{
+					//	Timeout on CsStmGetTransferStatus().
+					//	Data transfer has not yet completed. We can repeat calling CsStmGetTransferStatus() until we get the status success (ie data transfer is completed)
+					//	In this sample program, we consider the timeout as an error
+					_ftprintf(stdout, _T("\nStream transfer timeout on card %d !!!\n"), nCardIndex);
+				}
+				else // some other error 
+				{
+					char szErrorString[255];
+
+					CsGetErrorString(i32Status, szErrorString, sizeof(szErrorString));
+					_ftprintf(stdout, _T("\n%s on card %d !!!\n"), szErrorString, nCardIndex);
+				}
+			}
+			if (g_GpuConfig.bDoAnalysis)
+			{
+				QueryPerformanceCounter((LARGE_INTEGER*)&end_time);
+				diff_time[nCardIndex - 1] += ((double)end_time.QuadPart - (double)start_time.QuadPart) / freq;
+			}
+			pWorkBuffer = pCurrentBuffer;
+
+			u32LoopCount++;
+
+			step_end_time = clock();
+			step_time = ((double)(step_end_time - step_start_time)) / CLOCKS_PER_SEC * 1000;
+			printf("One Step Time: %.2f ms\n", step_time);
+		}
+
+
+		if (g_GpuConfig.bDoAnalysis)
+		{
+			QueryPerformanceCounter((LARGE_INTEGER*)&start_time);
+		}
+
+		if (bStreamCompletedSuccess && g_StreamConfig.bSaveToFile && NULL != pWorkBuffer)
+		{
+			u32WriteSize = u32ActualLength * g_CsSysInfo.u32SampleSize;
+
+			//Apply a right padding with the sector size
+			if (g_StreamConfig.bFileFlagNoBuffering)
+			{
+				uInt8* pBufTmp = pWorkBuffer;
+				u32WriteSize = ((u32WriteSize - 1) / u32SectorSize + 1) * u32SectorSize;
+
+				// clear padding bytes
+				if (u32WriteSize > u32ActualLength * g_CsSysInfo.u32SampleSize)
+					memset(&pBufTmp[u32ActualLength * g_CsSysInfo.u32SampleSize], 0, u32WriteSize - u32ActualLength * g_CsSysInfo.u32SampleSize);
+			}
+
+			// Save the data from pWorkBuffer to hard disk
+			bWriteSuccess = WriteFile(hFile, pWorkBuffer, u32WriteSize, &dwBytesSave, NULL);
+			if (!bWriteSuccess || dwBytesSave != u32WriteSize)
+			{
+				_ftprintf(stdout, _T("\nWriteFile() error on card %d !!! (GetLastError() = 0x%x\n"), nCardIndex, GetLastError());
+				SetEvent(g_hStreamError);
+			}
+		}
+		if (g_GpuConfig.bDoAnalysis)
+		{
+			QueryPerformanceCounter((LARGE_INTEGER*)&end_time);
+			diff_time[nCardIndex - 1] += ((double)end_time.QuadPart - (double)start_time.QuadPart) / freq;
+		}
+		// Close the data file and free all streaming buffers
+		if (g_StreamConfig.bSaveToFile)
+			CloseHandle(hFile);
+
 		if (g_GpuConfig.bUseGpu)
 		{
 			cudaHostUnregister(h_buffer1);
 			cudaHostUnregister(h_buffer2);
-			cudaHostUnregister(h_buffer3);
 		}
-		DeleteFile(szSaveFileName);
-		ExitThread(1);
-	}
+		CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
+		CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
 
-	// Convert the transfer size to BYTEs or WORDs depending on the card.
-	u32TransferSizeSamples = g_StreamConfig.u32BufferSizeBytes/g_CsSysInfo.u32SampleSize;
+		cudaFree(dev_a);
+		cudaFree(d_accTemp);
+		cudaFreeHost(d_accTemp2);
+		free(h_dev_a);
+		free(h_dev_a2);
+		free(h_odata);
 
-	int* h_odata = (int*)malloc(1 * sizeof(int));
-	short* h_dev_a = (short*)malloc(u32TransferSizeSamples * sizeof(short));
-	short* h_dev_a2 = (short*)malloc(u32TransferSizeSamples * sizeof(short));
-	cudaStatus = cudaMalloc((int**)&dev_a, u32TransferSizeSamples / 48 * sizeof(int));
-	cudaStatus = cudaMalloc((void**)&d_accTemp, 1 * sizeof(int));
-	cudaStatus = cudaMalloc((void**)&d_accTemp2, 1 * sizeof(int));
-	FILE* fptr;
-	if (g_StreamConfig.bCascadeResult == 0) fptr = fopen("Analysis.txt", "w");
-	if (g_StreamConfig.bCascadeResult == 1) fptr = fopen("Analysis.txt", "a");
-	fprintf(fptr, "//////\nBuffer size (Samples)\n%d\nSampling Rate (Hz)\n%d\n///\n", u32TransferSizeSamples, g_CsAcqCfg.i64SampleRate);
-	fclose(fptr);
-	
-	int timer = 1;
-
-	// Steam acqusition has started.
-	// loop until either we've done the number of segments we want, or
-	// the ESC key was pressed to abort. While we loop, we transfer data into
-	// pCurrentBuffer and save pWorkBuffer to hard disk
-
-	clock_t start_Time, current_time;
-	double elapsed_time;
-
-	while( ! ( bDone || bStreamCompletedSuccess) )
-	{
-		// Check if user has aborted or an error has occured
-		if ( WAIT_OBJECT_0 == WaitForSingleObject( g_hStreamAbort, 0 ) )
-			break;
-		if ( WAIT_OBJECT_0 == WaitForSingleObject( g_hStreamError, 0 ) )
-			break;
-
-
-		if (g_GpuConfig.bDoAnalysis)
+		if (bStreamCompletedSuccess)
 		{
-			QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
-		}
-
-		
-
-		i32Status = CsStmTransferToBuffer(g_hSystem, nCardIndex, pBuffer1, u32TransferSizeSamples);
-		i32Status = CsStmGetTransferStatus(g_hSystem, nCardIndex, g_StreamConfig.u32TransferTimeout, &u32ErrorFlag, &u32ActualLength, &u8EndOfData);
-		//TODO: Transfer - TOO SLOW 25 ms, concurency
-
-
-		if (timer == 1) start_Time = clock();
-		cudaStatus = GPU_Equation_PlusOne(d_buffer1, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount, h_odata, h_dev_a, h_dev_a2, dev_a, d_accTemp, d_accTemp2);
-		//TODO: TOO SLOW 15 ms, concurency		
-
-		if (timer == 1) {
-			current_time = clock();
-			elapsed_time = ((double)(current_time - start_Time)) / CLOCKS_PER_SEC * 1000;
-			printf("Elapsed Time: %.2f ms\r", elapsed_time);
-		}
-
-		if (CS_FAILED(i32Status))
-		{
-			if ( CS_STM_COMPLETED == i32Status )
-				bStreamCompletedSuccess = TRUE;
-			else
-			{
-				SetEvent( g_hStreamError );
-				DisplayErrorString(i32Status);
-			}
-			break;
-		}
-		// do processing here on pWorkBuffer
-		if (g_GpuConfig.bDoAnalysis)
-		{
-			if (g_GpuConfig.bUseGpu)
-			{
-			
-				//cudaStatus = GPU_Equation_PlusOne(d_buffer, g_GpuConfig.u32SkipFactor, g_CsAcqCfg.u32SampleSize, u32TransferSizeSamples, g_GpuConfig.i32GpuBlocks, g_GpuConfig.i32GpuThreads, u32LoopCount);
-
-				if (cudaStatus != cudaSuccess)
-				{
-					SetEvent(g_hStreamError);
-					fprintf(stderr, "GPU_Equation_PlusOne() failed. Error code %d\n", cudaStatus);
-					break;
-				}
-			}
-			else // use CPU
-			{
-				i32Status = CPU_Equation_PlusOne(pCurrentBuffer, g_CsAcqCfg.u32SampleSize, 0, u32TransferSizeSamples);
-
-				if (CS_FAILED(i32Status))
-				{
-					SetEvent(g_hStreamError);
-					fprintf(stderr, "CPU_Equation_PlusOne() failed.\n");
-					break;
-				}
-			}
-		}
-
-
-		if ( g_StreamConfig.bSaveToFile && NULL != pWorkBuffer )
-		{
-			// While data transfer of the current buffer is in progress, save the data from pWorkBuffer to hard disk
-			dwBytesSave = 0;
-			bWriteSuccess = WriteFile( hFile, pWorkBuffer, g_StreamConfig.u32BufferSizeBytes, &dwBytesSave, NULL );
-			if ( ! bWriteSuccess || dwBytesSave != g_StreamConfig.u32BufferSizeBytes )
-			{
-				_ftprintf (stdout, _T("\nWriteFile() error on card %d !!! (GetLastError() = 0x%x\n"), nCardIndex, GetLastError());
-				SetEvent( g_hStreamError );
-				bDone = TRUE;
-			}
-		}
-
-		// Wait for the DMA transfer on the current buffer to complete so we can loop back around to start a new one.
-		// The calling thread will sleep until the transfer completes
-		if ( CS_SUCCEEDED(i32Status) )
-		{
-			// Calculate the total of data transfered so far for this card
-			g_llCardTotalData[nCardIndex-1] += u32ActualLength ;//////////////////////////////////////////////////////////////////////////////////////////////////////////
-			bStreamCompletedSuccess = (0 != u8EndOfData);
-
-			if ( 0 != u32ErrorFlag )
-			{
-				if ( STM_TRANSFER_ERROR_FIFOFULL & u32ErrorFlag )
-				{
-					// The Fifo full error has occured at the card level which results data lost.
-					// This error occurs when the application is not fast enough to transfer data.
-					if ( 0 != g_StreamConfig.bErrorHandling )
-					{
-						// g_StreamConfig.bErrorHandling != 0
-						// Stop as soon as we recieve the FIFO full error from the card
-						SetEvent( g_hStreamError );
-						_ftprintf (stdout, _T("\nFifo full detected on the card %d !!!\n"), nCardIndex);
-						bDone = TRUE;
-					}
-					else
-					{
-						// g_StreamConfig.bErrorHandling == 0
-						// Transfer all valid data into the PC RAM
-
-						// Althought the Fifo full has occured, there is valid data available on the On-board memory.
-						// To transfer these data into the PC RAM, we can keep calling CsStmTransferToBuffer() then CsStmGetTransferStatus()
-						// until the function CsStmTransferToBuffer() returns the error CS_STM_FIFO_OVERFLOW.
-						// The error CS_STM_FIFO_OVERFLOW indicates that all valid data has been transfered to the PC RAM
-
-						// Do nothing here, go backto the loop CsStmTransferToBuffer() CsStmGetTransferStatus()
-					}
-				}
-				if ( u32ErrorFlag & STM_TRANSFER_ERROR_CHANNEL_PROTECTION )
-				{
-					// Channel protection error as coccrued
-					SetEvent( g_hStreamError );
-					_ftprintf (stdout, _T("\nChannel Protection Error on Board %d!!!\n"), nCardIndex);
-					bDone = TRUE;
-				}
-			}
+			dwRetCode = 0;
 		}
 		else
 		{
-			SetEvent( g_hStreamError );
-			bDone = TRUE;
-
-			if ( CS_STM_TRANSFER_TIMEOUT == i32Status )
-			{			 
-				//	Timeout on CsStmGetTransferStatus().
-				//	Data transfer has not yet completed. We can repeat calling CsStmGetTransferStatus() until we get the status success (ie data transfer is completed)
-				//	In this sample program, we consider the timeout as an error
-				_ftprintf (stdout, _T("\nStream transfer timeout on card %d !!!\n"), nCardIndex);
-			}
-			else // some other error 
-			{
-				char szErrorString[255];
-
-				CsGetErrorString(i32Status, szErrorString, sizeof(szErrorString));
-				_ftprintf (stdout, _T("\n%s on card %d !!!\n"), szErrorString, nCardIndex);
-			}
-		}
-		if (g_GpuConfig.bDoAnalysis)
-		{
-			QueryPerformanceCounter((LARGE_INTEGER *)&end_time);
-			diff_time[nCardIndex - 1] += ((double)end_time.QuadPart - (double)start_time.QuadPart) / freq;
-		}
-		pWorkBuffer = pCurrentBuffer;
-
-		u32LoopCount++;
-	}
-
-
-	if (g_GpuConfig.bDoAnalysis)
-	{
-		QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
-	}
-
-	if ( bStreamCompletedSuccess && g_StreamConfig.bSaveToFile && NULL != pWorkBuffer )
-	{
-		u32WriteSize = u32ActualLength*g_CsSysInfo.u32SampleSize;
-
-		//Apply a right padding with the sector size
-		if( g_StreamConfig.bFileFlagNoBuffering )
-		{
-			uInt8 *pBufTmp = pWorkBuffer;
-			u32WriteSize = ((u32WriteSize - 1) / u32SectorSize + 1) * u32SectorSize;
-
-			// clear padding bytes
-			if (u32WriteSize > u32ActualLength*g_CsSysInfo.u32SampleSize)
-				memset(&pBufTmp[u32ActualLength*g_CsSysInfo.u32SampleSize], 0, u32WriteSize -u32ActualLength*g_CsSysInfo.u32SampleSize);
+			// Stream operation has been aborted by user or errors
+			dwRetCode = 1;
 		}
 
-		// Save the data from pWorkBuffer to hard disk
-		bWriteSuccess = WriteFile( hFile, pWorkBuffer, u32WriteSize, &dwBytesSave, NULL );
-		if ( ! bWriteSuccess || dwBytesSave != u32WriteSize )
-		{
-			_ftprintf (stdout, _T("\nWriteFile() error on card %d !!! (GetLastError() = 0x%x\n"), nCardIndex, GetLastError());
-			SetEvent( g_hStreamError );
-		}
+		ExitThread(dwRetCode);
 	}
-	if (g_GpuConfig.bDoAnalysis)
-	{
-		QueryPerformanceCounter((LARGE_INTEGER *)&end_time);
-		diff_time[nCardIndex - 1] += ((double)end_time.QuadPart - (double)start_time.QuadPart) / freq;
-	}
-	// Close the data file and free all streaming buffers
-	if ( g_StreamConfig.bSaveToFile )
-		CloseHandle(hFile);
-	
-	if (g_GpuConfig.bUseGpu)
-	{
-		cudaHostUnregister(h_buffer1);
-		cudaHostUnregister(h_buffer2);
-		cudaHostUnregister(h_buffer3);
-	}
-	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer1);
-	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer2);
-	CsStmFreeBuffer(g_hSystem, nCardIndex, pBuffer3);
-	cudaFree(dev_a);
-	cudaFree(d_accTemp);
-	cudaFreeHost(d_accTemp2);
-	free(h_dev_a);
-	free(h_dev_a2);
-	free(h_odata);
-
-	if ( bStreamCompletedSuccess )
-	{
-		dwRetCode = 0;
-	}
-	else
-	{
-		// Stream operation has been aborted by user or errors
-		dwRetCode = 1;
-	}
-
-	ExitThread(dwRetCode);
 }
 
 /***************************************************************************************************
