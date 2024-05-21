@@ -67,7 +67,7 @@ typedef struct
 	BOOL		bErrorHandling;			// How to handle the FIFO full error
 	BOOL		bCascadeResult;			// Do cascade the result without initilizing a new file
 	CsDataPackMode		DataPackCfg;
-}CSSTMCONFIG, *PCSSTMCONFIG;
+}CSSTMCONFIG, * PCSSTMCONFIG;
 
 
 #define GPU_SECTION _T("GpuConfig")		/* section name in ini file */
@@ -87,7 +87,7 @@ typedef struct
 	TCHAR		strResultFile[MAX_PATH];
 	BOOL		bDoAnalysis;			/* Turn on or off data analysis */
 	BOOL		bUseGpu;				/* Turn on or off GPU usage */
-}CSGPUCONFIG, *PCSGPUCONFIG;
+}CSGPUCONFIG, * PCSGPUCONFIG;
 
 
 
@@ -97,9 +97,9 @@ uInt32 CalculateTriggerCountFromConfig(CSSYSTEMINFO* pCsSysInfo, const LPCTSTR s
 BOOL isChannelValid(uInt32 u32ChannelIndex, uInt32 u32mode, uInt16 u16cardIndex, CSSYSTEMINFO* pCsSysInfo);
 uInt32 GetSectorSize();
 
-void  UpdateProgress( uInt32 u32Elapsed, LONGLONG llTotaBytes );
+void  UpdateProgress(uInt32 u32Elapsed, LONGLONG llTotaBytes);
 int32 LoadStmConfiguration(LPCTSTR szIniFile, PCSSTMCONFIG pConfig);
-DWORD WINAPI CardStreamThread( void *CardIndex );
+DWORD WINAPI CardStreamThread(void* CardIndex);
 BOOL Prepare_Cleanup();
 
 #ifdef __cplusplus
@@ -115,39 +115,39 @@ extern int CPU_Equation_PlusOne(void* buffer, unsigned long sample_size, __int64
 int32 LoadGpuConfiguration(LPCTSTR szIniFile, PCSGPUCONFIG pConfig);
 cudaError_t InitializeCudaDevice(int32 nDevice, int32* i32MaxBlocks, int32* i32MaxThreads, BOOL* bPinGenericMemory);
 void DisplayResults(int stream,
-					int gpu,
-					uInt32 u32Mode,
-					uInt32 u32SegmentCount,
-					int64 i64TransferLength,
-					uInt32 u32SampleSize,
-					uInt32 u32SkipFactor,
-					double time,
-					char* filename);
+	int gpu,
+	uInt32 u32Mode,
+	uInt32 u32SegmentCount,
+	int64 i64TransferLength,
+	uInt32 u32SampleSize,
+	uInt32 u32SkipFactor,
+	double time,
+	char* filename);
 
 void VerifyData(void* buffer, int64 size, unsigned int sample_size);
 
 
 // Global variables shared between threads
-HANDLE						g_hThread[MAX_CARDS_COUNT] = {0};
-LONGLONG					g_llCardTotalData[MAX_CARDS_COUNT] = {0};
+HANDLE						g_hThread[MAX_CARDS_COUNT] = { 0 };
+LONGLONG					g_llCardTotalData[MAX_CARDS_COUNT] = { 0 };
 LONGLONG					g_llTotalSamplesConfig = 0;
 HANDLE						g_hStreamStarted = NULL;
 HANDLE						g_hStreamAbort = NULL;
 HANDLE						g_hStreamError = NULL;
 HANDLE						g_hThreadReadyForStream = NULL;
 CSHANDLE					g_hSystem = 0;
-CSSYSTEMINFO				g_CsSysInfo = {0};
-CSACQUISITIONCONFIG			g_CsAcqCfg = {0};
-CSSTMCONFIG					g_StreamConfig = {0};
-CSGPUCONFIG					g_GpuConfig = {0};
-CS_STRUCT_DATAFORMAT_INFO	g_DataFormatInfo = {0};
+CSSYSTEMINFO				g_CsSysInfo = { 0 };
+CSACQUISITIONCONFIG			g_CsAcqCfg = { 0 };
+CSSTMCONFIG					g_StreamConfig = { 0 };
+CSGPUCONFIG					g_GpuConfig = { 0 };
+CS_STRUCT_DATAFORMAT_INFO	g_DataFormatInfo = { 0 };
 double						diff_time[MAX_CARDS_COUNT] = { 0. };
 
 int _tmain()
 {
 	int32						i32Status = CS_SUCCESS;
 	uInt32						u32Mode;
-	CSSYSTEMINFO				CsSysInfo = {0};
+	CSSYSTEMINFO				CsSysInfo = { 0 };
 	LPCTSTR						szIniFile = _T("StreamThruGPU.ini");
 	BOOL						bDone = FALSE;
 	long long					llSystemTotalData = 0;
@@ -172,7 +172,7 @@ int _tmain()
 	double pre_time;
 
 	pre_start_time = clock();
-	
+
 	// Initializes the CompuScope boards found in the system. If the
 	// system is not found a message with the error code will appear.
 	// Otherwise i32Status will contain the number of systems found.
@@ -212,8 +212,8 @@ int _tmain()
 	_ftprintf(stdout, _T("\nBoard Name: %s"), CsSysInfo.strBoardName);
 
 	//	We are analysing the ini file to find the number of triggers
-	i32Status = CsAs_ConfigureSystem(g_hSystem, (int)CsSysInfo.u32ChannelCount, 
-		(int)CalculateTriggerCountFromConfig(&CsSysInfo,(LPCTSTR)szIniFile), 
+	i32Status = CsAs_ConfigureSystem(g_hSystem, (int)CsSysInfo.u32ChannelCount,
+		(int)CalculateTriggerCountFromConfig(&CsSysInfo, (LPCTSTR)szIniFile),
 		(LPCTSTR)szIniFile, &u32Mode);
 
 	if (CS_FAILED(i32Status))
@@ -224,7 +224,7 @@ int _tmain()
 			_ftprintf(stdout, _T("\nCannot find %s - using default parameters."), szIniFile);
 		}
 		else
-		{	
+		{
 
 			// Otherwise the call failed.  If the call did fail we should free the CompuScope
 			// system so it's available for another application
@@ -233,7 +233,7 @@ int _tmain()
 			return(-1);
 		}
 	}
-	
+
 	// If the return value is greater than  1, then either the application, 
 	// acquisition, some of the Channel and / or some of the Trigger sections
 	// were missing from the ini file and the default parameters were used. 
@@ -339,22 +339,22 @@ int _tmain()
 		return (-1);
 	}
 
-	 // Prepare streaming by deleting all existing data file that have the same file name
-	 if ( 0 == Prepare_Cleanup() )
-	 {
-		 CsFreeSystem(g_hSystem);
+	// Prepare streaming by deleting all existing data file that have the same file name
+	if (0 == Prepare_Cleanup())
+	{
+		CsFreeSystem(g_hSystem);
 		return (-1);
 	}
 
 
 	// Create events for stream data acquisition
-	g_hStreamStarted	= CreateEvent( NULL, TRUE, FALSE, NULL );
-	g_hStreamAbort		= CreateEvent( NULL, TRUE, FALSE, NULL );
-	g_hStreamError		= CreateEvent( NULL, TRUE, FALSE, NULL );
-	g_hThreadReadyForStream	= CreateEvent( NULL, FALSE, FALSE, NULL );
-	if ( NULL == g_hStreamStarted || NULL == g_hStreamAbort || NULL == g_hStreamError || NULL == g_hThreadReadyForStream )
+	g_hStreamStarted = CreateEvent(NULL, TRUE, FALSE, NULL);
+	g_hStreamAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
+	g_hStreamError = CreateEvent(NULL, TRUE, FALSE, NULL);
+	g_hThreadReadyForStream = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (NULL == g_hStreamStarted || NULL == g_hStreamAbort || NULL == g_hStreamError || NULL == g_hThreadReadyForStream)
 	{
-		_ftprintf (stderr, _T("\nUnable to create events for synchronization.\n"));
+		_ftprintf(stderr, _T("\nUnable to create events for synchronization.\n"));
 		CsFreeSystem(g_hSystem);
 		return (-1);
 	}
@@ -383,8 +383,8 @@ int _tmain()
 	// Get the total amount of data we expect to receive.
 	// We can get this value from driver or calculate the following formula
 	// g_llTotalSamplesConfig = (g_CsAcqCfg.i64SegmentSize + SegmentTail_Size) * (g_CsAcqCfg.u32Mode&CS_MASKED_MODE) * g_CsAcqCfg.u32SegmentCount;
-	
-	i32Status = CsGet( g_hSystem, 0, CS_STREAM_TOTALDATA_SIZE_BYTES, &g_llTotalSamplesConfig );
+
+	i32Status = CsGet(g_hSystem, 0, CS_STREAM_TOTALDATA_SIZE_BYTES, &g_llTotalSamplesConfig);
 	if (CS_FAILED(i32Status))
 	{
 		DisplayErrorString(i32Status);
@@ -393,32 +393,32 @@ int _tmain()
 	}
 
 	// Convert to number of samples
-	if ( -1 != g_llTotalSamplesConfig )
+	if (-1 != g_llTotalSamplesConfig)
 		g_llTotalSamplesConfig /= g_CsAcqCfg.u32SampleSize;
 
 	printf("\n The Board Count: %u\n", CsSysInfo.u32BoardCount);
 	//  Create threads for Stream. In M/S system, we have to create one thread per card
-	for (n = 1, i = 0; n <= CsSysInfo.u32BoardCount; n++, i++ )
+	for (n = 1, i = 0; n <= CsSysInfo.u32BoardCount; n++, i++)
 	{
-		g_hThread[i] = (HANDLE) CreateThread( NULL, 0, CardStreamThread, &n, 0, &dwThreadId );
-		if ( (HANDLE)(INT_PTR) -1 == g_hThread[i] )
+		g_hThread[i] = (HANDLE)CreateThread(NULL, 0, CardStreamThread, &n, 0, &dwThreadId);
+		if ((HANDLE)(INT_PTR)-1 == g_hThread[i])
 		{
 			// Fail to create the streaming thread for the n card.
 			// Set the event g_hStreamAbort to terminate all threads
-			SetEvent( g_hStreamAbort ); 
-			_ftprintf (stderr, _T("\nUnable to create thread for card %d."), n);
+			SetEvent(g_hStreamAbort);
+			_ftprintf(stderr, _T("\nUnable to create thread for card %d."), n);
 			CsFreeSystem(g_hSystem);
 			return (-1);
 		}
 		else
 		{
 			// Wait for the event g_hThreadReadyForStream to make sure that the thread was successfully created and are ready for stream
-			if (WAIT_TIMEOUT == WaitForSingleObject( g_hThreadReadyForStream,  10000 ))
+			if (WAIT_TIMEOUT == WaitForSingleObject(g_hThreadReadyForStream, 10000))
 			{
 				// Something is wrong. It is not suppose to take that long
 				// Set the event g_hStreamAbort to terminate all threads
-				_ftprintf (stderr, _T("\nThread initialization error on card %d."), n);
-				SetEvent( g_hStreamAbort ); 
+				_ftprintf(stderr, _T("\nThread initialization error on card %d."), n);
+				SetEvent(g_hStreamAbort);
 				CsFreeSystem(g_hSystem);
 				return (-1);
 			}
@@ -426,7 +426,7 @@ int _tmain()
 	}
 
 	// Start the streaming data acquisition
-	printf ("\nStart streaming. Press ESC to abort\n\n");
+	printf("\nStart streaming. Press ESC to abort\n\n");
 	i32Status = CsDo(g_hSystem, ACTION_START);
 	if (CS_FAILED(i32Status))
 	{
@@ -439,8 +439,8 @@ int _tmain()
 
 	// Set the event g_hStreamStarted so that the other threads can start to transfer data
 	Sleep(g_StreamConfig.u32DelayStartTransfer);		// Only for debug
-	SetEvent( g_hStreamStarted );		
-	
+	SetEvent(g_hStreamStarted);
+
 	pre_current_time = clock();
 	pre_time = ((double)(pre_current_time - pre_start_time)) / CLOCKS_PER_SEC * 1000;
 	printf("Prepare Time: %.2f ms\n", pre_time);
@@ -448,7 +448,7 @@ int _tmain()
 
 	// Loop until either we've done the number of segments we want, or
 	// the ESC key was pressed to abort.
-	while( !bDone  )
+	while (!bDone)
 	{
 		// Are we being asked to quit? 
 		if (_kbhit())
@@ -475,8 +475,8 @@ int _tmain()
 			bDone = TRUE;
 		}
 
-		dwWaitStatus = WaitForMultipleObjects( CsSysInfo.u32BoardCount, g_hThread, TRUE, 1000 );
-		if ( WAIT_OBJECT_0 == dwWaitStatus )
+		dwWaitStatus = WaitForMultipleObjects(CsSysInfo.u32BoardCount, g_hThread, TRUE, 1000);
+		if (WAIT_OBJECT_0 == dwWaitStatus)
 		{
 			// All Streaming threads have terminated
 			bDone = TRUE;
@@ -486,12 +486,12 @@ int _tmain()
 
 		// Calcaulate the sum of all data received so far
 		llSystemTotalData = 0;
-		for (i = 0; i < CsSysInfo.u32BoardCount; i++ )
+		for (i = 0; i < CsSysInfo.u32BoardCount; i++)
 		{
 			llSystemTotalData += g_llCardTotalData[i];
 		}
 
-		UpdateProgress(u32TickNow-u32TickStart, llSystemTotalData * g_CsSysInfo.u32SampleSize);
+		UpdateProgress(u32TickNow - u32TickStart, llSystemTotalData * g_CsSysInfo.u32SampleSize);
 	}
 
 	//	Abort the current acquisition 
@@ -514,25 +514,25 @@ int _tmain()
 	}
 
 	// Check some events to see if there was any errors
-	if (WAIT_OBJECT_0 == WaitForSingleObject( g_hStreamError, 0 ) )
+	if (WAIT_OBJECT_0 == WaitForSingleObject(g_hStreamError, 0))
 	{
-		_ftprintf (stdout, _T("\nStream aborted on error.\n"));
+		_ftprintf(stdout, _T("\nStream aborted on error.\n"));
 	}
-	else if (WAIT_OBJECT_0 == WaitForSingleObject( g_hStreamAbort, 0 ))
+	else if (WAIT_OBJECT_0 == WaitForSingleObject(g_hStreamAbort, 0))
 	{
-		_ftprintf (stdout, _T("\nStream aborted by user.\n"));
+		_ftprintf(stdout, _T("\nStream aborted by user.\n"));
 	}
 	else
 	{
-		_ftprintf (stdout, _T("\n\nStream has finished %u segments.\n"), g_CsAcqCfg.u32SegmentCount);
+		_ftprintf(stdout, _T("\n\nStream has finished %u segments.\n"), g_CsAcqCfg.u32SegmentCount);
 	}
 
-	dTotalData = 1.0*llSystemTotalData/1000000.0;		// Million BYTES or million WORDs depending on CompuScope cards
+	dTotalData = 1.0 * llSystemTotalData / 1000000.0;		// Million BYTES or million WORDs depending on CompuScope cards
 
-	if ( bStreamPackedSupported )
-		printf ("\nTotal data in '%d-bit' samples: %0.2f MS\n", g_DataFormatInfo.u32SampleSize_Bits, dTotalData*g_CsSysInfo.u32SampleSize*8/g_DataFormatInfo.u32SampleSize_Bits );
+	if (bStreamPackedSupported)
+		printf("\nTotal data in '%d-bit' samples: %0.2f MS\n", g_DataFormatInfo.u32SampleSize_Bits, dTotalData * g_CsSysInfo.u32SampleSize * 8 / g_DataFormatInfo.u32SampleSize_Bits);
 	else
-		printf ("\nTotal data in '%d-bit' samples: %0.2f MS\n", 8*g_CsAcqCfg.u32SampleSize, dTotalData );
+		printf("\nTotal data in '%d-bit' samples: %0.2f MS\n", 8 * g_CsAcqCfg.u32SampleSize, dTotalData);
 
 	if (g_GpuConfig.bDoAnalysis)
 	{
@@ -545,15 +545,15 @@ int _tmain()
 			dSystemTotalTime += diff_time[i];
 		}
 
- 		DisplayResults(1,
-				       g_GpuConfig.bUseGpu,
-					   g_CsAcqCfg.u32Mode & CS_MASKED_MODE, // mask of the constant that loaded the expert firmware
-					   g_CsAcqCfg.u32SegmentCount,
-					   llSystemTotalData,
-					   g_CsAcqCfg.u32SampleSize,
-					   g_GpuConfig.u32SkipFactor,
-					   dSystemTotalTime,
-				       g_GpuConfig.strResultFile);
+		DisplayResults(1,
+			g_GpuConfig.bUseGpu,
+			g_CsAcqCfg.u32Mode & CS_MASKED_MODE, // mask of the constant that loaded the expert firmware
+			g_CsAcqCfg.u32SegmentCount,
+			llSystemTotalData,
+			g_CsAcqCfg.u32SampleSize,
+			g_GpuConfig.u32SkipFactor,
+			dSystemTotalTime,
+			g_GpuConfig.strResultFile);
 	}
 
 	return 0;
@@ -571,10 +571,10 @@ uInt32 CalculateTriggerCountFromConfig(CSSYSTEMINFO* pCsSysInfo, const LPCTSTR s
 
 	GetFullPathName(szIniFile, MAX_PATH, szFilePath, NULL);
 
-	for( ; i < pCsSysInfo->u32TriggerMachineCount; ++i)
+	for (; i < pCsSysInfo->u32TriggerMachineCount; ++i)
 	{
-		_stprintf(szTrigger, _T("Trigger%i"), i+1);
-		
+		_stprintf(szTrigger, _T("Trigger%i"), i + 1);
+
 		if (0 == GetPrivateProfileSection(szTrigger, szString, 100, szFilePath))
 			break;
 	}
@@ -589,10 +589,10 @@ BOOL isChannelValid(uInt32 u32ChannelIndex, uInt32 u32mode, uInt16 u16cardIndex,
 {
 	uInt32 mode = u32mode & CS_MASKED_MODE;
 	uInt32 channelsPerCard = pCsSysInfo->u32ChannelCount / pCsSysInfo->u32BoardCount;
-	uInt32 min = ((u16cardIndex-1) * channelsPerCard) + 1;
+	uInt32 min = ((u16cardIndex - 1) * channelsPerCard) + 1;
 	uInt32 max = (u16cardIndex * channelsPerCard);
 
-	if((u32ChannelIndex-1) % (pCsSysInfo->u32ChannelCount / mode) != 0)
+	if ((u32ChannelIndex - 1) % (pCsSysInfo->u32ChannelCount / mode) != 0)
 		return FALSE;
 
 	return (u32ChannelIndex >= min && u32ChannelIndex <= max);
@@ -604,7 +604,7 @@ BOOL isChannelValid(uInt32 u32ChannelIndex, uInt32 u32mode, uInt16 u16cardIndex,
 uInt32 GetSectorSize()
 {
 	uInt32 size = 0;
-	if( !GetDiskFreeSpace(NULL, NULL, &size, NULL, NULL))
+	if (!GetDiskFreeSpace(NULL, NULL, &size, NULL, NULL))
 		return 0;
 	return size;
 }
@@ -615,20 +615,20 @@ uInt32 GetSectorSize()
 int32 InitializeStream(CSHANDLE hSystem)
 {
 	int32	i32Status = CS_SUCCESS;
-	int64	i64ExtendedOptions = 0;	
+	int64	i64ExtendedOptions = 0;
 	char	szExpert[64];
 	uInt32	u32ExpertOption = 0;
-	CSACQUISITIONCONFIG CsAcqCfg = {0};
+	CSACQUISITIONCONFIG CsAcqCfg = { 0 };
 
 
-	u32ExpertOption = CS_BBOPTIONS_STREAM; 
-	strcpy_s(szExpert, sizeof(szExpert), "Stream" );
+	u32ExpertOption = CS_BBOPTIONS_STREAM;
+	strcpy_s(szExpert, sizeof(szExpert), "Stream");
 
 	CsAcqCfg.u32Size = sizeof(CSACQUISITIONCONFIG);
 
 	// Get user's acquisition Data
 	i32Status = CsGet(hSystem, CS_ACQUISITION, CS_CURRENT_CONFIGURATION, &CsAcqCfg);
- 	if (CS_FAILED(i32Status))
+	if (CS_FAILED(i32Status))
 	{
 		DisplayErrorString(i32Status);
 		return (i32Status);
@@ -654,7 +654,7 @@ int32 InitializeStream(CSHANDLE hSystem)
 		_ftprintf(stdout, _T("\nApplication terminated."));
 		return CS_MISC_ERROR;
 	}
-	
+
 	// Sets the Acquisition values down the driver, without any validation, 
 	// for the Commit step which will validate system configuration.
 	i32Status = CsSet(hSystem, CS_ACQUISITION, &CsAcqCfg);
@@ -670,7 +670,7 @@ int32 InitializeStream(CSHANDLE hSystem)
 /***************************************************************************************************
 ****************************************************************************************************/
 
-void UpdateProgress( uInt32 u32Elapsed, LONGLONG llTotaBytes )
+void UpdateProgress(uInt32 u32Elapsed, LONGLONG llTotaBytes)
 {
 	uInt32	h = 0;
 	uInt32	m = 0;
@@ -678,11 +678,11 @@ void UpdateProgress( uInt32 u32Elapsed, LONGLONG llTotaBytes )
 	double	dRate;
 	double	dTotal;
 
-	if ( u32Elapsed > 0 )
+	if (u32Elapsed > 0)
 	{
 		dRate = (llTotaBytes / 1000000.0) / (u32Elapsed / 1000.0);
 
-		if ( u32Elapsed >= 1000 )
+		if (u32Elapsed >= 1000)
 		{
 			if ((s = u32Elapsed / 1000) >= 60)	// Seconds
 			{
@@ -694,7 +694,7 @@ void UpdateProgress( uInt32 u32Elapsed, LONGLONG llTotaBytes )
 				s %= 60;
 			}
 		}
-		dTotal = 1.0*llTotaBytes/1000000.0;		// Mega samples
+		dTotal = 1.0 * llTotaBytes / 1000000.0;		// Mega samples
 		//printf ("\rTotal: %0.2f MB, Rate: %6.2f MB/s, Elapsed time: %u:%02u:%02u  ", dTotal, dRate, h, m, s);
 	}
 }
@@ -708,13 +708,13 @@ int32 LoadStmConfiguration(LPCTSTR szIniFile, PCSSTMCONFIG pConfig)
 	TCHAR	szString[MAX_PATH];
 	TCHAR	szFilePath[MAX_PATH];
 	int		nDummy;
-	CSSTMCONFIG CsStmCfg = {0};	
+	CSSTMCONFIG CsStmCfg = { 0 };
 
 	// Set defaults in case we can't read the ini file
 	CsStmCfg.u32BufferSizeBytes = STREAM_BUFFERSZIZE;
 	CsStmCfg.u32TransferTimeout = TRANSFER_TIMEOUT;
 	strcpy(CsStmCfg.strResultFile, _T(OUT_FILE));
-	
+
 	if (NULL == pConfig)
 	{
 		return (CS_INVALID_PARAMETER);
@@ -744,7 +744,7 @@ int32 LoadStmConfiguration(LPCTSTR szIniFile, PCSSTMCONFIG pConfig)
 	CsStmCfg.u32TransferTimeout = GetPrivateProfileInt(STM_SECTION, _T("TimeoutOnTransfer"), nDummy, szFilePath);
 
 	nDummy = CsStmCfg.u32BufferSizeBytes;
-	CsStmCfg.u32BufferSizeBytes =  GetPrivateProfileInt(STM_SECTION, _T("BufferSize"), nDummy, szFilePath);
+	CsStmCfg.u32BufferSizeBytes = GetPrivateProfileInt(STM_SECTION, _T("BufferSize"), nDummy, szFilePath);
 
 	nDummy = 0;
 	CsStmCfg.bErrorHandling = (0 != GetPrivateProfileInt(STM_SECTION, _T("ErrorHandlingMode"), nDummy, szFilePath));
@@ -1336,20 +1336,20 @@ BOOL Prepare_Cleanup()
 	TCHAR		szSaveFileName[MAX_PATH];
 	HANDLE		hFile = NULL;
 
-	if ( g_StreamConfig.bSaveToFile )
+	if (g_StreamConfig.bSaveToFile)
 	{
 		for (n = 1; n <= g_CsSysInfo.u32BoardCount; n++)
 		{
-			sprintf_s( szSaveFileName, sizeof (szSaveFileName), "%s_%d.dat", g_StreamConfig.strResultFile, n );
+			sprintf_s(szSaveFileName, sizeof(szSaveFileName), "%s_%d.dat", g_StreamConfig.strResultFile, n);
 			// Check if the file exists on the HDD
-			hFile = CreateFile( szSaveFileName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL );
-			if ( INVALID_HANDLE_VALUE != hFile )
+			hFile = CreateFile(szSaveFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+			if (INVALID_HANDLE_VALUE != hFile)
 			{
 				CloseHandle(hFile);
 				bSuccess = DeleteFile(szSaveFileName);
 				if (!bSuccess)
 				{
-					_ftprintf (stderr, _T("\nUnable to delete the existing data file (%s). GetLastError() = 0x%x\n"), szSaveFileName, GetLastError());
+					_ftprintf(stderr, _T("\nUnable to delete the existing data file (%s). GetLastError() = 0x%x\n"), szSaveFileName, GetLastError());
 					break;
 				}
 			}
